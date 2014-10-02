@@ -4,8 +4,10 @@ import nrt_osc_parser_genomic
 
 from itertools import chain, izip
 import numpy as np
+import numpy.ma as ma
 import scipy.signal
 import matplotlib.pyplot as plt
+import scipy.spatial.distance as spat
 
 from corpusdb import *
 
@@ -33,7 +35,7 @@ class RandomGenerator_8Bit(object):
 
 class GenomicExplorer2:
 
-	def __init__(self, anchor, sourcesound, targetsound, subdir=None, out_dir='out', size=50, report_interval=20, mut_prob=0.01, stop_slope=0.000001):
+	def __init__(self, anchor, sourcesound, targetsound, subdir=None, out_dir='out', psize=50, report_interval=20, mut_prob=0.01, stop_slope=0.000001):
 				
 		self.anchor = anchor
 		if subdir is not None:
@@ -101,6 +103,7 @@ class GenomicExplorer2:
 
 		self.mutation_prob = mut_prob
 		self.depth = 10
+		self.pop_size = psize
  		# 'alpha', 'c_delay', 'c_decay', 'beta', 'd_mult', 'gamma', 'ms_bins'
 		# self.rawtable, self.rawmaps, 
 		self.history, self.dists, self.pool_means, self.pool_stdevs = dict(), dict(), dict(), dict()
@@ -109,28 +112,29 @@ class GenomicExplorer2:
 		self.stopping_slope = stop_slope
 		self.running_avg_mean_stdevs = dict()
 		self.stopping_crit_min_gens = 5
-		self.init_population(popsize=size)
+		self.init_population()
 
 	
-	def init_population(self, popsize):
+	def init_population(self):
 		self.population = []
-		for n in range(popsize):
+		for n in range(self.pop_size):
 			self.population += [Genome(self.gspec)] #random seed
 			# convert genome params into child node + analyze
 			#self.add_and_analyze_child(n)
 			self.add_and_analyze_child_grid(n)
 		#print self.population
 		# self.compare_all_individuals(aflag=True)
-			
+	
+	# Iterate over population and mutate with some probibility
 	def mutate_pop(self):
 		mutated = []
 		for indiv in range(1, len(self.population)):
-			if random.random() < self.mutation_prob:
+			#if random.random() < self.mutation_prob:
 				# print "indiv: ", indiv
-				self.population[ indiv ].mutate()
-				mutated += [indiv] # mark an indiv. that has mutated
-				self.do_update_cascade(indiv)
-				mutated += [indiv]
+			self.population[ indiv ].mutate()
+			mutated += [indiv] # mark an indiv. that has mutated
+			self.do_update_cascade(indiv)
+			mutated += [indiv]
 		self.history[self.current_generation] = mutated
 				
 	# This is performed once per mutation
@@ -143,18 +147,16 @@ class GenomicExplorer2:
 		# self.add_and_analyze_child(index, tag=self.current_generation)
 		self.add_and_analyze_child_grid(index, tag=self.current_generation)
 	
-	# mate with random genewise crossover
+	# Mate with single-point crossover
 	def mate(self, a, b, kill_index):
-		
 		offspring = None		
-		
+		# print "--------------mate2..."
+		# print [a,b,kill_index]
 		if random.random() < 0.5:
 			offspring = self.population[a].values[:]
-			
 		else:
 			offspring = self.population[b].values[:]
-		
-		# basic random gene selection from 2 parents
+		# basic random gene(wise) selection from 2 parents
 		for i in range(len(offspring)):
 			if random.random() < 0.5:
 				offspring[i] = self.population[a].values[i]
@@ -163,136 +165,82 @@ class GenomicExplorer2:
 		# replace the killed individual with our new individual
 		self.population[kill_index] = Genome(self.gspec,offspring)
 		self.do_update_cascade(kill_index, True)
-	
-	def mate2(self, a, b, k):
+
+	# Mate with 2-point (cyclic) crossover, use offspringB
+	def mate2(self, a, b, kill_index):
 		offspring = None
 		# print "--------------mate2..."
-		# print [a,b,k]
+		# print [a,b,kill_index]
 		if random.random() < 0.5:
 			offspringA = self.population[a].values[:]
 			offspringB = self.population[b].values[:]
 		else:
 			offspringA = self.population[b].values[:]
 			offspringB = self.population[a].values[:]
-		# print offspringA
-		# print offspringB
-		# print len(offspringA) - 1 
+		# print (offspringA, offspringB, (len(offspringA) - 1))
 		l = len(offspringA) - 1
 		cuts = sorted([random.randint(0,l), random.randint(0,l)])
 		# print cuts
 		temp = offspringA[cuts[0]:cuts[1]]
 		offspringA[cuts[0]:cuts[1]] = offspringB[cuts[0]:cuts[1]]
 		offspringB[cuts[0]:cuts[1]] = temp
-		# print "- - - - - - - "
-		# print offspringA
-		# print offspringB
-		# print ""
+		# print (offspringA, offspringB)
 		# replace the killed individual with our new individual
-		self.population[k] = Genome(self.gspec,offspringA)
-		self.do_update_cascade(k, True)
+		self.population[kill_index] = Genome(self.gspec,offspringA)
+		self.do_update_cascade(kill_index, True)
 
-	# # mate with 2-point (cyclic) crossover, use offspringB
-	# def mate3(self, a, b):
-	# 	offspring = None
-	# 	# print "--------------mate3..."
-	# 	# print [a,b,k]
-	# 	if random.random() < 0.5:
-	# 		offspringA = self.population[a].values[:]
-	# 		offspringB = self.population[b].values[:]
-	# 	else:
-	# 		offspringA = self.population[b].values[:]
-	# 		offspringB = self.population[a].values[:]
-	# 	# print offspringA
-	# 	# print offspringB
-	# 	# print len(offspringA) - 1 
-	# 	l = len(offspringA) - 1
-	# 	cuts = sorted([random.randint(0,l), random.randint(0,l)])
-	# 	# print cuts
-	# 	temp = offspringA[cuts[0]:cuts[1]]
-	# 	offspringA[cuts[0]:cuts[1]] = offspringB[cuts[0]:cuts[1]]
-	# 	offspringB[cuts[0]:cuts[1]] = temp
-	# 	# print "- - - - - - - "
-	# 	# print offspringA
-	# 	# print offspringB
-	# 	# print ""
-	# 	# replace the killed individual with our new individual
+	# FITNESS FUNCTION:
+	# 1. calculate 3 values for all members:
+	#	A. using amplitude/power vals, pop. member -> target indiv.
+	#	B. using MFCCs, pop. member -> target indiv.
+	#	C. using MFCCs, pop. member -> pop. MEAN
+	def compare_pop_to_target(self, depth, verb=False):
 		
-	# 	self.do_update_cascade(k, False)
+		targ = self.corpus.convert_corpus_to_tagged_array('m13', tag = -1, map_flag=True)[:,1:]
+		targa = self.corpus.convert_corpus_to_tagged_array('p6', tag = -1, map_flag=True)[:,1:3]
 
 
-	# 	self.population[k] = Genome(self.gspec,offspringB)
+		pop = self.corpus.convert_corpus_to_array_by_cids('m13', cids = self.current_roster, map_flag=True)[:,1:]
+		popa = self.corpus.convert_corpus_to_array_by_cids('p6', cids = self.current_roster, map_flag=True)[:,1:3]
+
+		mean = ma.masked_where(pop==0.0,pop).mean(axis=0).data
+		meana = ma.masked_where(popa==0.0,popa).mean(axis=0).data
+
+		popmean = np.r_[pop, np.atleast_2d(mean)]
+		popmeana = np.r_[popa, np.atleast_2d(meana)]
 
 
-	def compare_pop_to_target(self, depth, rev=False):
-		
-		targ = self.corpus.convert_corpus_to_tagged_array('m13', tag = -1, map_flag=True)[:,1:] # by convention, tag -1 is the target sound unit!
-		md = self.corpus.convert_corpus_to_array_by_cids('m13', cids = self.current_roster, map_flag=True)[:,1:]
-		md = np.r_[targ, md]
-		
-		targa = self.corpus.convert_corpus_to_tagged_array('p6', tag = -1, map_flag=True)[:,1:] # by convention, tag -1 is the target sound unit!
-		mda = self.corpus.convert_corpus_to_array_by_cids('p6', cids = self.current_roster, map_flag=True)[:,1:]
-		mda = np.r_[targa, mda]
+		pop = np.r_[targ, pop]
+		popa = np.r_[targa, popa]
 
 
+		pop_spatdist = spat.pdist(pop, 'seuclidean')
+		popa_spatdist = spat.pdist(popa, 'seuclidean')
 
-		print ':: ', targ
-		print md.shape
-		print mda.shape
+		mpop_spatdist = spat.pdist(popmean, 'seuclidean')
+		mpopa_spatdist = spat.pdist(popmeana, 'seuclidean')
 
-		md_row_sums = md.sum(axis=1)
-		md_nrmd = md / md_row_sums[:, np.newaxis]
-		md_nrmd = np.ma.masked_array(md_nrmd, np.isnan(md_nrmd))
-		meanpop = np.mean(md_nrmd, axis=0)
-		print "row means (", meanpop.shape, "): ", meanpop
+		pop_squaredist = spat.squareform(pop_spatdist)
+		popa_squaredist = spat.squareform(popa_spatdist)
 
-		mda_row_sums = mda.sum(axis=1)
-		mda_nrmd = md / mda_row_sums[:, np.newaxis]
-		mda_nrmd = np.ma.masked_array(mda_nrmd, np.isnan(mda_nrmd))
+		mpop_squaredist = spat.squareform(mpop_spatdist)
+		mpopa_squaredist = spat.squareform(mpopa_spatdist)
 
-		adists = [float(np.sqrt(np.sum(np.abs(mda_nrmd[index,:] - mda_nrmd[0,:])))) for index in range(1, mda_nrmd.shape[0])]
-		mpdists = [float(np.sqrt(np.sum(np.abs(md_nrmd[index,:] - meanpop)))) for index in range(1, md_nrmd.shape[0])]
+		m_tscores = [pop_squaredist[0,indiv] for indiv in range(1,(self.pop_size+1))]
+		a_tscores = [popa_squaredist[0,indiv] for indiv in range(1,(self.pop_size+1))]
 
-		print "================= before"
-		print md_nrmd
-		print mda_nrmd
-		print meanpop # mean of normed data, so already normed!
+		m_mscores = [mpop_squaredist[self.pop_size,indiv] for indiv in range(self.pop_size)]
+		a_mscores = [mpopa_squaredist[self.pop_size,indiv] for indiv in range(self.pop_size)]
 
-		dists = [float(np.sqrt(np.sum(np.abs(md_nrmd[index,:] - md_nrmd[0,:])))) for index in range(1, md_nrmd.shape[0])]
-		print "------------------"
-		print dists
-		# sorted_dists = [[i, (random.random()*x), (random.random()*adists[i]), (random.random()*(1.0 - mpdists[i]))] for i, x in enumerate(dists)]
-		sorted_dists = [[i, (0.9*x), (1.0*adists[i]), (0.5*(1.0 - mpdists[i]))] for i, x in enumerate(dists)]
-		sorted_dists = sorted(sorted_dists[:], key = lambda row: (row[1]+row[2]+row[3]), reverse=rev) # + (maxedits - row[3])))
+		ordered = sorted([[i, m_tscores[i], a_tscores[i], (1.0-(m_mscores[i]/max(m_mscores)))] for i in range(self.pop_size)], key = lambda row: (row[1]+row[2]+row[3]), reverse=False)
 
-		sorted_adists = [[i,x] for i, x in enumerate(adists)]
-		sorted_adists = sorted(sorted_adists[:], key = lambda row: row[1], reverse=rev) # + (maxedits - row[3])))
-		
-		sorted_mpdists = [[i,x] for i, x in enumerate(mpdists)]
-		sorted_mpdists = sorted(sorted_mpdists[:], key = lambda row: row[1], reverse=rev) # + (maxedits - row[3])))
+		print "ORDERED: ", ordered
 
-		print "================="
-		print sorted_adists
-		print "------------------"
-		print sorted_mpdists
-		
-		print "------------------"
-		print sorted_dists
-		print ""
+		return ordered[:depth], ordered[(-1*depth):]
 
-		return sorted_dists[:depth], sorted_dists[(-1*depth):]
-
-
-	def sort_by_distances(self, depth, rev=True):
-		sorted_dists = [[k, self.dists[k], self.population[k].age, self.population[k].edits] for k in sorted(self.dists.keys())]
-		sorted_dists = sorted(sorted_dists[1:], key = lambda row: row[1], reverse=rev) # + (maxedits - row[3])))
-		# print 'sorted dists: '
-		# print sorted_dists
-		return sorted_dists[:depth], sorted_dists[(-1*depth):]
-	
 
 	def reproduce(self, depth=25):
 		
-		#kills, duplicates = self.sort_by_distances(depth)
 		duplicates, kills  = self.compare_pop_to_target(depth)
 		# for dup in duplicates:
 		# 	self.render_individual(dup[0], 'gen'+str(self.population[0].age))
@@ -343,40 +291,6 @@ class GenomicExplorer2:
 			self.sfinfos[i]['bnum'] = bnum
 		return 1
 	
-
-	def play_genome(self, index):
-		
-		vals = self.population[index].realvalues
-		if vals[C_DELAY] < 1.0:
-			cdelay = 0.0
-		else:
-			cdelay = vals[C_DELAY]
-		decay = 0.9
-
-		tr = self.population[index].tratio
-		
-		if index == 0:
-			slot = 0
-		else:
-			slot = 1
-
-		# print '===================\n', self.sfinfos[slot]['dur']
-		
-		# |outbus=20, srcbufNum, start=0.0, dur=1.0, transp=1.0, c_delay=0.0, c_decay=0.0, d_mult=1.0, d_amp=0.7, ms_bins=0, alpha=1, beta=1, gamma=1|
-		sc.Synth('sigmaSynth', 
-		args=[
-			'srcbufNum', self.sfinfos[slot]['bnum'], 
-			'start', 0,
-			'dur', self.sfinfos[slot]['dur']*1000,
-			'transp', tr,
-			'c_delay', cdelay,
-			'c_decay', decay,
-			'd_mult', vals[D_MULT],
-			'ms_bins', vals[MS_BINS],
-			'alpha', vals[ALPHA],
-			'beta', vals[BETA],
-			'gamma', vals[GAMMA],
-			'delta', vals[DELTA]])
 	
 	def add_and_analyze_parent(self, sourcefile, subdir=None, tag=0, verb=False):
 
@@ -392,6 +306,7 @@ class GenomicExplorer2:
 		self.corpus.segment_units(sfid)
 		
 		return sfid
+
 
 	def add_and_analyze_child(self, index, tag=1, verb=False):
 
@@ -446,14 +361,15 @@ class GenomicExplorer2:
 	def add_and_analyze_child_grid(self, index, tag=1, verb=False):
 
 		genome = self.population[index]
-		print ""
-		print genome.realvalues[:16]
+		
 		switches = [(int(val)%2) for val in genome.realvalues[:16]]
 		slots = [(int(val)%36) for val in genome.realvalues[16:32]]
 		revised = [(switches[n] * slots[n]) for n in range(16)]
-		print "SLOTS: ", revised
-
-		print "--- ", genome.pgsequences
+		if verb:
+			print "ADD AND ANALYZE CHILD _GRID_ ======"
+			print genome.realvalues[:16]
+			print "SLOTS: ", revised
+			print "--- ", genome.pgsequences
 		# print revised
 		pgseqs = [genome.pgsequences[id] for id in revised]
 		# print pgseqs
@@ -479,7 +395,7 @@ class GenomicExplorer2:
 			srcFileID=self.source_id,
 			synthdef=synthlist,
 			params=paramlist,
-			verb=True)
+			verb=False)
 		# print child_node
 		# self.corpus.analyze_sound_file(self.sourcesnd, child_node.sfid, outwav=True, topoflag=0, verb=verb)
 		self.corpus.analyze_sound_file(self.sourcesnd, child_node.sfid, outwav=True, topoflag=16, verb=verb)
@@ -496,140 +412,6 @@ class GenomicExplorer2:
 
 
 
-# g = Genome(
-# 	[
-# 		ParameterGeneSequence(0, 'efx_gain_mn', ['gain'], [[0.0,1.0]),
-#		ParameterGeneSequence(1, 'efx_clipdist_mn', ['delay', 'decay', 'gain'], [[0.0,0.5],[0.0,5.0],[0.0,1.0]]),
-# 		ParameterGeneSequence(2, 'efx_clipdist_mn', ['mult', 'clip', 'gain'], [[0.0,5.0],[0.0,1.0],[0.0,1.0]]),
-# 		ParameterGeneSequence(3, 'efx_clipdist_mn', ['bins', 'gain'], [[0,256],[0.0,1.0]])
-# 	],
-# 	None
-# )
-
-	# def analyze_individual(self, index):
-
-	# 	print "%%%%%%%%%%%%%%%%%%"
-	# 	print "INDEX: ", index
-	# 	print len(self.sfpaths)
-
-	# 	if index == 0:
-	# 		oscpath = os.path.join(self.anchor, 'snd', 'osc', `index`, (os.path.splitext(self.filenames[0])[0] + '_sigmaAnalyzer2.osc'))
-	# 		# mdpath = os.path.join(self.anchor, 'snd', 'md', `index`, self.filenames[0])
-	# 		mdpath = os.path.join(self.anchor, 'snd', 'md', `index`, (os.path.splitext(self.filenames[0])[0] + '.md.wav'))
-	# 	else:
-	# 		oscpath = os.path.join(self.anchor, 'snd', 'osc', `index`, (os.path.splitext(self.filenames[1])[0] + '_sigmaAnalyzer2.osc'))
- # 			mdpath = os.path.join(self.anchor, 'snd', 'md', `index`, self.filenames[0])
-	# 		mdpath = os.path.join(self.anchor, 'snd', 'md', `index`, (os.path.splitext(self.filenames[1])[0] + '.md.wav'))
-		
-	# 	print "-----------------------------"
-	# 	print oscpath
-	# 	print mdpath
-		
-	# 	vals = self.population[index].realvalues
-	# 	if vals[C_DELAY] < 0.01:
-	# 		cdelay = 0.0
-	# 	else:
-	# 		cdelay = vals[C_DELAY]
-	# 		# decay = 0.9
-			
-	# 	tr = self.population[index].tratio
-
-	# 	if index == 0:
-	# 		slot = 0
-	# 	else:
-	# 		slot = 1
-		
-	# 	print (self.sfpaths[slot], index, tr, self.sfinfos[slot]['rate'], self.sfinfos[slot]['dur'])
-	# 	print ''
-	# 	print ['c_delay', cdelay, 'c_decay', vals[C_DECAY], 'd_mult', vals[D_MULT], 'ms_bins', vals[MS_BINS], 'alpha', vals[ALPHA], 'beta', vals[BETA], 'gamma', vals[GAMMA], 'delta', vals[DELTA]]
-	# 	print ''
-	# 	oscpath, mdpath = self.parser.createNRTScore(self.sfpaths[slot],
-	# 						index=index, 
-	# 						tratio=tr,
-	# 						srate=self.sfinfos[slot]['rate'],
-	# 						duration=self.sfinfos[slot]['dur'],
-	# 						params=[
-	# 							'c_delay', cdelay,
-	# 							'c_decay', vals[C_DECAY],
-	# 							'd_mult', vals[D_MULT],
-	# 							'ms_bins', vals[MS_BINS],
-	# 							'alpha', vals[ALPHA],
-	# 							'beta', vals[BETA],
-	# 							'gamma', vals[GAMMA],
-	# 							'delta', vals[DELTA]])
-
-	# 	cmd = 'scsynth -N ' + oscpath + ' _ _ 44100 AIFF int16 -o 1'
-	# 	print cmd
-	# 	args = shlex.split(cmd)
-	# 	p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) #, shell=True, close_fds=True)
-		
-	# 	print 'PID: ', p.pid
-	# 	rc = p.wait()
-				
-	# 	print 'RC: ', rc
-	# 	if rc == 1:
-	# 		num_frames = int(math.ceil(self.sfinfos[slot]['dur'] / 0.04 / tr))
-	# 		#  print 'num frames: ', num_frames
-	# 		self.rawtable[index] = (mdpath, num_frames)
-		
-	# 	# 		print self.rawtable
-	
-	# def render_individual(self, index, generation_subdir='gen0'):
-	
-	# 	vals = self.population[index].realvalues
-	# 	if vals[C_DELAY] < 0.01:
-	# 		cdelay = 0.0
-	# 	else:
-	# 		cdelay = vals[C_DELAY]
-		
-	# 	tr = self.population[index].tratio
-
-	# 	if index == 0:
-	# 		slot = 0
-	# 	else:
-	# 		slot = 1
-
-	# 	oscpath, mdpath = self.parser.createNRTScore(self.sfpaths[slot], 
-	# 						index=index, 
-	# 						tratio=tr,
-	# 						srate=self.sfinfos[slot]['rate'],
-	# 						duration=self.sfinfos[slot]['dur'],
-	# 						params=[
-	# 							'c_delay', cdelay,
-	# 							'c_decay', vals[C_DECAY],
-	# 							'd_mult', vals[D_MULT],
-	# 							'ms_bins', vals[MS_BINS],
-	# 							'alpha', vals[ALPHA],
-	# 							'beta', vals[BETA],
-	# 							'gamma', vals[GAMMA],
-	# 							'delta', vals[DELTA]])
-
-	# 	if os.path.exists(os.path.join(self.anchor, 'snd', self.out_dir, str(generation_subdir))) is False:
-	# 		os.mkdir(os.path.join(self.anchor, 'snd', self.out_dir, str(generation_subdir)))
-
-	# 	cmd = 'scsynth -N ' + oscpath + ' _ ' + os.path.join(self.anchor, 'snd', self.out_dir, generation_subdir, (str(index) + '.aiff')) + ' 44100 AIFF int16 -o 1'
-	# 	args = shlex.split(cmd)
-	# 	p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) #, shell=True, close_fds=True)
-	# 	rc = p.wait()
-	# 	if rc == 1:
-	# 	 	print 'SUCCESS: ', os.path.join(self.anchor, 'snd', self.out_dir, (str(index) + '.aiff'))
-	# 	 	rc = 0
-	# 	else:
-	# 		return None
-	# 	# cannot get this to work:
-	# 	# cmd = 'sox -b 16 ' + os.path.join(self.anchor, 'snd', self.out_dir, str(generation_subdir), (str(index) + '.aiff')) + ' ' + os.path.join(self.anchor, 'snd', self.out_dir, str(generation_subdir), (str(index) + '.wav')) + '; rm ' + os.path.join(self.anchor, 'snd', self.out_dir, str(generation_subdir), (str(index) + '.aiff'))
-	# 	# print cmd
-	# 	args = shlex.split(cmd)
-	# 	p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) #, shell=True, close_fds=True)
-	# 	rc = p.wait()
-	# 	# print rc
-	# 	if rc == 1: ' DOUBLE SUCCESS!!'
-	
-	# def activate_raw_data(self, index):
-		
-		mdpath = self.rawtable[index][0]
-		num_frames = self.rawtable[index][1]
-		self.rawmaps[index] = np.memmap(mdpath, dtype=np.float32, mode='r', offset=272, shape=(num_frames, 25))
 	
 	"""
 	COMPARE_ALL_INDIVIDUALS:
@@ -645,82 +427,6 @@ class GenomicExplorer2:
 			self.compare_individual(i)
 		# print self.dists
 		return self.dists
-	"""
-	COMPARE_INDIVIDUAL:
-		... to individual in the slot that is stipulated by the arg zeroindex!
-		-	by convention, we should usually put what we are comparing to in slot 0
-	"""
-	def compare_individual_resample(self, index, zeroindex=0):
-		i_length = self.rawmaps[index].shape[0]
-		zr0_length = self.rawmaps[zeroindex].shape[0]
-		print i_length, ' | ', zr0_length
-
-		# i1_length = self.rawmaps[index-1].shape[0] ## <--- NEIGHBOR comparison
-		# print i_length, ' | ', i1_length, ' | ', zr0_length
-
-		# based on length comparison, resample the mutated individuals so that they are same length as the zeroth individual (that does not mutate)
-		# if indiv. is longer, resample indiv., take abs. diff., sum, div. by length
-		if zr0_length < i_length:
-			mfccs_dist_to_zero = float(np.sum(np.abs(scipy.signal.signaltools.resample(self.rawmaps[index][:,1:14], zr0_length, window='hanning') - self.rawmaps[0][:,1:14]))) / float(zr0_length)
-			total_dist = (float(np.sqrt(np.sum(np.abs(self.rawmaps[index][:zr0_length,0] - self.rawmaps[0][:zr0_length,0])))) / float(zr0_length)) + mfccs_dist_to_zero
-		# if zeroth indiv. is longer, resample zeroth indiv., take abs. diff., sum, div. by length, then do same comparison with "neighbor"
-		elif i_length < zr0_length:
-			mfccs_dist_to_zero = float(np.sum(np.abs(self.rawmaps[index][:,1:14] - scipy.signal.signaltools.resample(self.rawmaps[0][:,1:14], float(i_length), window='hanning')))) / float(i_length)
-			total_dist = (float(np.sqrt(np.sum(np.abs(self.rawmaps[index][:i_length,0] - self.rawmaps[0][:i_length,0])))) / float(i_length)) + mfccs_dist_to_zero
-		else:
-		# otherwise, take abs. diff., sum, div. by length, then do amp 
-			mfccs_dist_to_zero = float(np.sum(np.abs(self.rawmaps[index][:,1:14] - self.rawmaps[0][:,1:14]))) / float(zr0_length)
-			total_dist = float(np.sqrt(np.sum(np.abs(self.rawmaps[index][:,0] - self.rawmaps[0][:,0])))) / float(zr0_length) + mfccs_dist_to_zero
-		
-		self.dists[index] = total_dist
-
-	def compare_individual(self, index, zeroindex=0):
-		i_length = self.rawmaps[index].shape[0]
-		zr0_length = self.rawmaps[zeroindex].shape[0]
-		# print i_length, ' | ', zr0_length
-
-		min_length = min(i_length, zr0_length)
-		# print i_length, ' | ', zr0_length, ' | ', min_length
-
-		# based on length comparison, resample the mutated individuals so that they are same length as the zeroth individual (that does not mutate)
-		# if indiv. is longer, resample indiv., take abs. diff., sum, div. by length
-		mfccs_dist_to_zero = float(np.sum(np.abs( self.rawmaps[index][:zr0_length,1:14] - self.rawmaps[0][:min_length,1:14]))) / float(min_length)
-		total_dist = (float(np.sqrt(np.sum(np.abs(self.rawmaps[index][:min_length,0] - self.rawmaps[0][:min_length,0])))) / float(min_length)) + mfccs_dist_to_zero
-		
-		self.dists[index] = (total_dist / float(min_length))
-	
-	def compare_individual_chi_squared(self, index):
-		i_length = self.rawmaps[index].shape[0]
-		i1_length = self.rawmaps[index-1].shape[0]
-		zr0_length = self.rawmaps[0].shape[0]
-		# 		print i_length, '|', zr0_length
-		# based on length comparison, resample the mutated individuals so that they are same length as the zeroth individual (that does not mutate)
-		# if indiv. is longer, resample indiv., take abs. diff., sum, div. by length
-		if zr0_length < i_length:
-			mfccs_dist_to_zero = scipy.stats.mstats.chisquare(scipy.signal.signaltools.resample(self.rawmaps[index], zr0_length, window='hanning'), self.rawmaps[0])
-			# 			print self.dists[index]
-		# if zeroth indiv. is longer, resample zeroth indiv., take abs. diff., sum, div. by length, then do same comparison with "neighbor"
-		elif i_length < zr0_length:
-			mfccs_dist_to_zero = scipy.stats.mstats.chisquare(self.rawmaps[index], scipy.signal.signaltools.resample(self.rawmaps[0], i_length, window='hanning'))
-		else:
-		# otherwise, take abs. diff., sum, div. by length, then do same comparison with "neighbor"
-			 print 'CHI-ZERO'
-			 mfccs_dist_to_zero = scipy.stats.mstats.chisquare(self.rawmaps[index], self.rawmaps[0])
-		
-		if i1_length < i_length:
-			neighbor_dist = scipy.stats.mstats.chisquare(scipy.signal.signaltools.resample(self.rawmaps[index-1], i_length, window='hanning') - self.rawmaps[index])
-		elif i_length < i1_length:
-			neighbor_dist = scipy.stats.mstats.chisquare(self.rawmaps[index-1], scipy.signal.signaltools.resample(self.rawmaps[index], i1_length, window='hanning'))
-		else:
-			print 'CHI-NEIGHBOR'
-			neighbor_dist = scipy.stats.mstats.chisquare(self.rawmaps[index-1], scipy.signal.signaltools.resample(self.rawmaps[index], i1_length, window='hanning'))
-		
-		nsum = np.sum(np.abs(neighbor_dist[0].data[:24]))
-		zsum = np.sum(np.abs(mfccs_dist_to_zero[0].data[:24]))
-		nasum = neighbor_dist[0].data[24]
-		zasum = mfccs_dist_to_zero[0].data[24]
-		
-		self.dists[index] = nsum + zsum - (24.0 * nasum) - (24.0 * zasum)
 	
 	def collect_population_data(self):
 		diffs = [self.dists[k] for k in self.dists.keys()]
@@ -815,7 +521,7 @@ class ParameterGeneSequence:
 
 class Genome:
 
-	def __init__(self, pgseq=[], values=None):
+	def __init__(self, pgseq=[], values=None, verb=False):
 		
 		"""
 		4 activator slots
@@ -834,10 +540,11 @@ class Genome:
 			self.boundaries += [bnds for bnds in pgs.boundaries]
 			self.numgenes += pgs.size
 		
-		print "+++++++++++++++++++++++++"
-		print self.numgenes, " | ", self.alist, " | "
-		print self.pgsequences
-		print self.boundaries
+		if verb:
+			print "+++++++++++++++++++++++++"
+			print self.numgenes, " | ", self.alist, " | "
+			print self.pgsequences
+			print self.boundaries
 
 		self.tratio	= 1.0		# CHECK THIS... WHY IS IT HERE/in Hertz!!! ???
 
@@ -873,22 +580,6 @@ class Genome:
 		self.realvalues = [lininterp(val,self.boundaries[i]) for i,val in enumerate(self.values)]
 
 
-# 	def xover_sub(self, pos, incomingSeq, headortail=0):
-# 		if headortail == 0:
-# 			print '<<>> ', self.binarystring
-# 			print '<<>> ', pos
-# 			print '<<>> ', incomingSeq
-# 			self.binarystring = incomingSeq[:pos] + self.binarystring[pos:]
-# 		else:
-# 			print '<<>> ', self.binarystring
-# 			print '<<>> ', pos
-# 			print '<<>> ', incomingSeq
-# 			self.binarystring = self.binarystring[:pos] + incomingSeq[:(len(self.binarystring)-pos)]
-# 		# recalc binary string
-# 		print '==== ', self.binarystring
-# 		self.values = binarystring_to_vals(self.binarystring)
-# 		print "values: ", self.values
-# 		self.realvalues = [lininterp(val,self.boundaries[i]) for i,val in enumerate(self.values)]
 
 def mean(arr):
 	return sum([(float(val)/len(arr)) for val in arr])
