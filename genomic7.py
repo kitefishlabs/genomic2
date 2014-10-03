@@ -48,49 +48,56 @@ class GenomicExplorer2:
 		
 		self.current_generation = 1
 		self.gspec = [
-			ParameterGeneSequence(0, 'efx_thru_mn', ['dummy'], [[0.0,1.0]]),
-			ParameterGeneSequence(1, 'efx_gain_mn', ['gain'], [[0.0,1.0]]),
+			ParameterGeneSequence(0, 'efx_thru_mn', ['dummy'], [[0.01,0.5]]),
+			ParameterGeneSequence(1, 'efx_gain_mn', ['gain'], [[0.01,0.5]]),
 			
-			ParameterGeneSequence(2, 'efx_freqshift_mn', ['frequency', 'phase', 'gain'], [[0,1000],[0.2,6.2831853072],[0.0,1.0]]),
-			ParameterGeneSequence(3, 'efx_pitchshift_mn', ['windowsize', 'pitchratio', 'pitchdisp', 'timedisp', 'gain'], [[0.01,0.5],[0.5,2.0],[0,1],[0,0.5],[0.2,2.0]]),
-			ParameterGeneSequence(4, 'efx_monograin_mn', ['windowsize', 'grainrate', 'winrandperc'], [[0.01,0.05],[1.0,100.0],[0,1],[0.0,1.0]]),
-			ParameterGeneSequence(5, 'efx_comb_mn', ['delay', 'decay', 'gain'], [[0.0001,0.05],[0.2,2.0],[0.0,1.0]]),
+			ParameterGeneSequence(2, 'efx_freqshift_mn', ['frequency', 'phase', 'gain'], [[0,1000],[0.2,6.2831853072],[0.01,0.5]]),
+			ParameterGeneSequence(3, 'efx_pitchshift_mn', ['windowsize', 'pitchratio', 'pitchdisp', 'timedisp', 'gain'], [[0.01,0.5],[0.5,2.0],[0,1],[0,0.5],[0.01,0.5]]),
+			ParameterGeneSequence(4, 'efx_monograin_mn', ['windowsize', 'grainrate', 'winrandperc','gain'], [[0.01,0.05],[1.0,100.0],[0.0,1.0],[0.01,0.5]]),
+			ParameterGeneSequence(5, 'efx_comb_mn', ['delay', 'decay', 'gain'], [[0.0001,0.05],[0.2,2.0],[0.01,0.5]]),
 			
-			ParameterGeneSequence(6, 'efx_clipdist_mn', ['mult', 'clip', 'gain'], [[0.0,10.0],[0.2,1.0],[0.0,1.0]]),
-			ParameterGeneSequence(7, 'efx_softclipdist_mn', ['mult', 'sclip', 'gain'], [[0.0,5.0],[0.2,1.0],[0.0,1.0]]),
-			ParameterGeneSequence(8, 'efx_decimatordist_mn', ['rate', 'bits', 'gain'], [[44100,441],[0,24],[0.0,1.0]]),
-			ParameterGeneSequence(9, 'efx_smoothdecimatordist_mn', ['rate', 'smooth', 'gain'], [[44100,441],[0.0,1.0],[0.0,1.0]]),
-			ParameterGeneSequence(10, 'efx_crossoverdist_mn', ['amp', 'smooth', 'gain'], [[0.0,10.0],[0.2,1.0],[0.0,1.0]]),
-			ParameterGeneSequence(11, 'efx_sineshaperdist_mn', ['amp', 'smooth', 'gain'], [[0.0,10.0],[0.2,1.0],[0.0,1.0]]),
+			# ParameterGeneSequence(6, 'efx_thru_mn', ['dummy'], [[0.0,1.0]]),
+			# ParameterGeneSequence(7, 'efx_thru_mn', ['dummy'], [[0.0,1.0]]),
+			# ParameterGeneSequence(8, 'efx_thru_mn', ['dummy'], [[0.0,1.0]]),
+			# ParameterGeneSequence(9, 'efx_thru_mn', ['dummy'], [[0.0,1.0]]),
+			# ParameterGeneSequence(10, 'efx_thru_mn', ['dummy'], [[0.0,1.0]]),
+			# ParameterGeneSequence(11, 'efx_thru_mn', ['dummy'], [[0.0,1.0]]),
 
-			ParameterGeneSequence(12, 'efx_ringz_mn', ['freq', 'decay', 'gain'], [[10000,40],[0,1],[0.2,1.0]]),
-			ParameterGeneSequence(13, 'efx_resonz_mn', ['freq', 'bwr', 'gain'], [[10000,40],[0.01,2],[0.2,1.0]]),
-			ParameterGeneSequence(14, 'efx_formlet_mn', ['freq', 'atk', 'decay', 'gain'], [[0,100],[0.001,0.01],[0.001,0.01],[0.2,1.0]]),
-			ParameterGeneSequence(15, 'efx_bmoog_mn', ['freq', 'qval','mode', 'saturation', 'gain'], [[10000,40],[0.01,2],[0,3],[0,1],[0.2,1.0]]),
+			ParameterGeneSequence(6, 'efx_clipdist_mn', ['mult', 'clip', 'gain'], [[0.0,10.0],[0.2,1.0],[0.0001,0.1]]),
+			ParameterGeneSequence(7, 'efx_softclipdist_mn', ['mult', 'sclip', 'gain'], [[0.0,5.0],[0.2,1.0],[0.0001,0.1]]),
+			ParameterGeneSequence(8, 'efx_decimatordist_mn', ['rate', 'bits', 'gain'], [[44100,441],[0,24],[0.0001,0.1]]),
+			ParameterGeneSequence(9, 'efx_smoothdecimatordist_mn', ['rate', 'smooth', 'gain'], [[44100,441],[0.0,1.0],[0.0001,0.1]]),
+			ParameterGeneSequence(10, 'efx_crossoverdist_mn', ['amp', 'smooth', 'gain'], [[0.0,10.0],[0.2,1.0],[0.0001,0.1]]),
+			ParameterGeneSequence(11, 'efx_sineshaperdist_mn', ['amp', 'smooth', 'gain'], [[0.0,10.0],[0.2,1.0],[0.0001,0.1]]),
+
+			ParameterGeneSequence(12, 'efx_ringz_mn', ['freq', 'decay', 'gain'], [[10000,40],[0,1],[0.01,0.5]]),
+			ParameterGeneSequence(13, 'efx_resonz_mn', ['freq', 'bwr', 'gain'], [[10000,40],[0.01,2],[0.01,0.5]]),
+			ParameterGeneSequence(14, 'efx_formlet_mn', ['freq', 'atk', 'decay', 'gain'], [[0,100],[0.001,0.01],[0.001,0.01],[0.01,0.5]]),
+			ParameterGeneSequence(15, 'efx_bmoog_mn', ['freq', 'qval','mode', 'saturation', 'gain'], [[10000,40],[0.01,2],[0,3],[0,1],[0.01,0.5]]),
 			
 
 
-			ParameterGeneSequence(16, 'efx_lopass_mn', ['center', 'gain'], [[10000,40],[0.2,1.0]]),
-			ParameterGeneSequence(17, 'efx_hipass_mn', ['center', 'gain'], [[40,10000],[0.2,1.0]]),
-			ParameterGeneSequence(18, 'efx_blowpass_mn', ['center', 'rq', 'gain'], [[10000,40],[0.001, 1.0],[0.2,1.0]]),
-			ParameterGeneSequence(19, 'efx_blowpass4_mn', ['center', 'rq', 'gain'], [[10000,40],[0.001, 1.0],[0.2,1.0]]),
-			ParameterGeneSequence(20, 'efx_bhipass_mn', ['center', 'rq', 'gain'], [[40,10000],[0.001, 1.0],[0.2,1.0]]),
-			ParameterGeneSequence(21, 'efx_bhipass4_mn', ['center', 'rq', 'gain'], [[40,10000],[0.001, 1.0],[0.2,1.0]]),
-			ParameterGeneSequence(22, 'efx_bpeakeq_mn', ['center', 'rq', 'db', 'gain'], [[100,2000],[0.001, 1.0],[-24,0],[0.2,1.0]]),
-			ParameterGeneSequence(23, 'efx_blowshelf_mn', ['center', 'rq', 'db', 'gain'], [[10000,40],[0.001, 1.0],[-24,0],[0.2,1.0]]),
-			ParameterGeneSequence(24, 'efx_bhishelf_mn', ['center', 'rq', 'db', 'gain'], [[40,10000],[0.001, 1.0],[-24,0],[0.2,1.0]]),
-			ParameterGeneSequence(25, 'efx_bbandstop_mn', ['center', 'rq', 'gain'], [[100,2000],[0.001, 1.0],[0.2,1.0]]),
-			ParameterGeneSequence(26, 'efx_ballpass_mn', ['center', 'rq', 'gain'], [[100,2000],[0.001, 1.0],[0.2,1.0]]),
+			ParameterGeneSequence(16, 'efx_lopass_mn', ['center', 'gain'], [[10000,40],[0.01,0.5]]),
+			ParameterGeneSequence(17, 'efx_hipass_mn', ['center', 'gain'], [[40,10000],[0.01,0.5]]),
+			ParameterGeneSequence(18, 'efx_blowpass_mn', ['center', 'rq', 'gain'], [[10000,40],[0.001, 1.0],[0.01,0.5]]),
+			ParameterGeneSequence(19, 'efx_blowpass4_mn', ['center', 'rq', 'gain'], [[10000,40],[0.001, 1.0],[0.01,0.5]]),
+			ParameterGeneSequence(20, 'efx_bhipass_mn', ['center', 'rq', 'gain'], [[40,10000],[0.001, 1.0],[0.01,0.5]]),
+			ParameterGeneSequence(21, 'efx_bhipass4_mn', ['center', 'rq', 'gain'], [[40,10000],[0.001, 1.0],[0.01,0.5]]),
+			ParameterGeneSequence(22, 'efx_bpeakeq_mn', ['center', 'rq', 'db', 'gain'], [[100,2000],[0.001, 1.0],[-24,0],[0.01,0.5]]),
+			ParameterGeneSequence(23, 'efx_blowshelf_mn', ['center', 'rq', 'db', 'gain'], [[10000,40],[0.001, 1.0],[-24,0],[0.01,0.5]]),
+			ParameterGeneSequence(24, 'efx_bhishelf_mn', ['center', 'rq', 'db', 'gain'], [[40,10000],[0.001, 1.0],[-24,0],[0.01,0.5]]),
+			ParameterGeneSequence(25, 'efx_bbandstop_mn', ['center', 'rq', 'gain'], [[100,2000],[0.001, 1.0],[0.01,0.5]]),
+			ParameterGeneSequence(26, 'efx_ballpass_mn', ['center', 'rq', 'gain'], [[100,2000],[0.001, 1.0],[0.01,0.5]]),
 
-			ParameterGeneSequence(27, 'efx_pvpartialsynth_mn', ['pcut', 'gain'], [[0,1.0],[0.2,1.0]]),
-			ParameterGeneSequence(28, 'efx_pvmagsmear_mn', ['bins', 'gain'], [[0,1024],[0.2,1.0]]),
-			ParameterGeneSequence(29, 'efx_pvbrickwall_mn', ['wipe', 'gain'], [[-1,1],[0.2,1.0]]),
-			ParameterGeneSequence(30, 'efx_pvmagabove_mn', ['thresh', 'gain'], [[0,1],[0.2,1.0]]),
-			ParameterGeneSequence(31, 'efx_pvmagbelow_mn', ['thresh', 'gain'], [[0,1],[0.2,1.0]]),
-			ParameterGeneSequence(32, 'efx_pvmagclip_mn', ['thresh', 'gain'], [[0,1],[0.2,1.0]]),
-			ParameterGeneSequence(33, 'efx_pvphaseshift_mn', ['shift', 'gain'], [[40,10000],[0.2,1.0]]),
-			ParameterGeneSequence(34, 'efx_pvphaseshifti_mn', ['shift', 'gain'], [[0,6.2831853072],[0.2,1.0]]),
-			ParameterGeneSequence(35, 'efx_hipass_mn', ['center', 'gain'], [[0,6.2831853072],[0.2,1.0]])
+			ParameterGeneSequence(27, 'efx_pvpartialsynth_mn', ['pcut', 'gain'], [[0,1.0],[0.01,0.5]]),
+			ParameterGeneSequence(28, 'efx_pvmagsmear_mn', ['bins', 'gain'], [[0,1024],[0.01,0.5]]),
+			ParameterGeneSequence(29, 'efx_pvbrickwall_mn', ['wipe', 'gain'], [[-1,1],[0.01,0.5]]),
+			ParameterGeneSequence(30, 'efx_pvmagabove_mn', ['thresh', 'gain'], [[0,1],[0.01,0.5]]),
+			ParameterGeneSequence(31, 'efx_pvmagbelow_mn', ['thresh', 'gain'], [[0,1],[0.01,0.5]]),
+			ParameterGeneSequence(32, 'efx_pvmagclip_mn', ['thresh', 'gain'], [[0,1],[0.01,0.5]]),
+			ParameterGeneSequence(33, 'efx_pvphaseshift_mn', ['shift', 'gain'], [[40,10000],[0.01,0.5]]),
+			ParameterGeneSequence(34, 'efx_pvphaseshifti_mn', ['shift', 'gain'], [[0,6.2831853072],[0.01,0.5]]),
+			ParameterGeneSequence(35, 'efx_hipass_mn', ['center', 'gain'], [[0,6.2831853072],[0.01,0.5]])
 			]
 
 		# create the corpus and add the source and target sounds
@@ -112,6 +119,7 @@ class GenomicExplorer2:
 		self.stopping_slope = stop_slope
 		self.running_avg_mean_stdevs = dict()
 		self.stopping_crit_min_gens = 5
+		self.mutation_tracker = [0 for p in range(self.pop_size)]
 		self.init_population()
 
 	
@@ -129,13 +137,9 @@ class GenomicExplorer2:
 	def mutate_pop(self):
 		mutated = []
 		for indiv in range(1, len(self.population)):
-			#if random.random() < self.mutation_prob:
-				# print "indiv: ", indiv
-			self.population[ indiv ].mutate()
-			mutated += [indiv] # mark an indiv. that has mutated
-			self.do_update_cascade(indiv)
-			mutated += [indiv]
-		self.history[self.current_generation] = mutated
+			res = self.population[ indiv ].mutate()
+			if res == 1:
+				self.mutation_tracker[indiv] = 1
 				
 	# This is performed once per mutation
 	# - only affects the individual being mutated
@@ -232,7 +236,7 @@ class GenomicExplorer2:
 		m_mscores = [mpop_squaredist[self.pop_size,indiv] for indiv in range(self.pop_size)]
 		a_mscores = [mpopa_squaredist[self.pop_size,indiv] for indiv in range(self.pop_size)]
 
-		ordered = sorted([[i, m_tscores[i], a_tscores[i], (1.0-(m_mscores[i]/max(m_mscores)))] for i in range(self.pop_size)], key = lambda row: (row[1]+row[2]+row[3]), reverse=False)
+		ordered = sorted([[i, m_tscores[i], a_tscores[i], (10.0*(1.0-(m_mscores[i]/max(m_mscores))))] for i in range(self.pop_size)], key = lambda row: (row[1]+row[2]+row[3]), reverse=False)
 
 		print "ORDERED: ", ordered
 
@@ -268,6 +272,10 @@ class GenomicExplorer2:
 # 			self.crossover()
 			if (iter%self.reporting_interval)==0:
 				# print self.population[10].age
+				for indiv in range(self.pop_size):
+					if self.mutation_tracker[indiv] > 0:
+						self.do_update_cascade(indiv)
+				self.mutation_tracker = [0 for p in range(self.pop_size)]
 				self.reproduce(self.depth)
 				#self.collect_population_data()
 				# res = self.check_for_stopping_conditions()
@@ -311,13 +319,13 @@ class GenomicExplorer2:
 	def add_and_analyze_child(self, index, tag=1, verb=False):
 
 		genome = self.population[index]
-		print ""
-		print genome.realvalues[:4]
+		# print ""
+		# print genome.realvalues[:4]
 		slots = [(int(val)%36) for val in genome.realvalues[:4]]
 		revised = unique_listed(slots)
 		# print "SLOTS: ", revised
 
-		# print "--- ", genome.pgsequences
+		# print "+++<<< ", genome.pgsequences
 		# print revised
 		pgseqs = [genome.pgsequences[id] for id in revised]
 		# print pgseqs
@@ -331,6 +339,8 @@ class GenomicExplorer2:
 			# print ''
 			# print slot, " + ", n
 			# print genome.realvalues
+			# print paramlist
+			# print genome.alist[slot]
 			valchunk = genome.realvalues[(4+genome.alist[slot]):(4+genome.alist[slot+1])]
 			# print paramlist[n]
 			# print valchunk
@@ -365,24 +375,34 @@ class GenomicExplorer2:
 		switches = [(int(val)%2) for val in genome.realvalues[:16]]
 		slots = [(int(val)%36) for val in genome.realvalues[16:32]]
 		revised = [(switches[n] * slots[n]) for n in range(16)]
-		if verb:
-			print "ADD AND ANALYZE CHILD _GRID_ ======"
-			print genome.realvalues[:16]
-			print "SLOTS: ", revised
-			print "--- ", genome.pgsequences
-		# print revised
+		# if verb:
+			# print "ADD AND ANALYZE CHILD _GRID_ ======"
+			# print genome.realvalues[:16]
+		# print "+++<<<\n", genome.pgsequences
+		# print "SLOTS: ", revised
+		
 		pgseqs = [genome.pgsequences[id] for id in revised]
-		# print pgseqs
+		# print "=========="
+		
 		synthlist = [pgs.efxsynth for pgs in pgseqs]
 		paramlist = [pgs.params for pgs in pgseqs]
-		# print "---------"
-		# print synthlist
-		# print paramlist
+		# print "pgseqs: "
+		# for pgs in pgseqs:
+		# 	print pgs
+		# for sl in synthlist:
+		# 	print sl
+		# for pl in paramlist:
+		# 	print pl
+		# for rv in genome.realvalues:
+		# 	print rv
+		# for av in genome.alist:
+		# 	print av
 
 		for n,slot in enumerate(revised):
 			# print ''
-			# print slot, " + ", n
-			# print genome.realvalues
+			# print paramlist
+			# print genome.alist
+			# print genome.alist[slot]
 			valchunk = genome.realvalues[(32+genome.alist[slot]):(32+genome.alist[slot+1])]
 			# print paramlist[n]
 			# print valchunk
@@ -532,19 +552,21 @@ class Genome:
 		
 		# self.boundaries = [[0,float(len(pgseq))] for n in range(self.numgenes)]
 		self.boundaries = [[0.0,2.0] for n in range(self.numgenes)] + [[0,float(len(pgseq)-1)] for n in range(self.numgenes)]
+		self.numgenes *= 2
 
+		print "boundaries: ", self.boundaries
 		self.pgsequences = pgseq
 		self.alist = [0]
 		for pgs in self.pgsequences:
 			self.alist += [(pgs.size+self.alist[-1])]
 			self.boundaries += [bnds for bnds in pgs.boundaries]
 			self.numgenes += pgs.size
+			print "numgenes: ", self.numgenes
 		
-		if verb:
-			print "+++++++++++++++++++++++++"
-			print self.numgenes, " | ", self.alist, " | "
-			print self.pgsequences
-			print self.boundaries
+		print "+++++++++++++++++++++++++"
+		print self.numgenes, " | ", self.alist, " | "
+		print self.pgsequences
+		print self.boundaries
 
 		self.tratio	= 1.0		# CHECK THIS... WHY IS IT HERE/in Hertz!!! ???
 
@@ -557,8 +579,9 @@ class Genome:
 		self.bitlength = len(self.values) * 8
 		self.binarystring = vals_to_binarystring(self.values)
 		# print "v+b"
-		# print self.values
-		# print self.boundaries
+		print len(self.values)
+		print len(self.boundaries)
+
 		self.realvalues = [lininterp(val,self.boundaries[i]) for i,val in enumerate(self.values)]
 		
 		self.age = 0
@@ -570,15 +593,18 @@ class Genome:
 		return "%9i/%9i || %.6f|%.6f|%.6f|%.6f || %.6f|%.6f|%.6f|%.6f|%.6f|%.6f|%.6f|%.6f|%.6f" % ((self.age, self.edits) + tuple(self.realvalues)) # + tuple(self.binarystring)
 	
 	def mutate(self):
-		pos = random.randint(0,(self.bitlength-1))
-		# flip bit
-		print 'bit flipped to: ', abs(1 - int(self.binarystring[pos],2))
-		self.binarystring = substitute_char_in_string(self.binarystring, pos, abs(1 - int(self.binarystring[pos],2)))
+		flag = 0
+		for bitpos in range(self.bitlength):
+			if random.random() < 0.01:
+				# flip bit
+				flag = 1
+				print 'bit flipped to: ', abs(1 - int(self.binarystring[bitpos], 2))
+				self.binarystring = substitute_char_in_string(self.binarystring, bitpos, abs(1 - int(self.binarystring[bitpos], 2)))
 		# recalc binary string
 		self.values = binarystring_to_vals(self.binarystring)
 		# print "values: ", self.values
 		self.realvalues = [lininterp(val,self.boundaries[i]) for i,val in enumerate(self.values)]
-
+		return flag
 
 
 def mean(arr):
